@@ -5,6 +5,7 @@ import nz.sodium.*;
 public class Clock {
 
     private static final int SEC_MAX = 60;
+    private static final int MIN_MAX = 60;
 
     public final Cell<String> hour;
     public final Cell<String> min;
@@ -25,7 +26,12 @@ public class Clock {
         Cell<String> secString = secCounter.map(sec -> String.format("%02d", sec));
         sec = secString;
 
-        min = empty;
+        Stream<Unit> minTimeTicks = secTimeTicks
+                .gate(secCounter.map(sec -> sec == SEC_MAX - 1));
+        Cell<Integer> minCounter = minTimeTicks
+                .accum(0, (tick, min) -> (min + 1) % MIN_MAX);
+        Cell<String> minString = minCounter.map(min -> String.format("%02d", min));
+        min = minString;
 
         hour = empty;
 
