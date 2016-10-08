@@ -37,7 +37,7 @@ public class Clock {
                 .gate(secCounter.map(sec -> sec == SEC_MAX - 1))
                 .gate(mode.map(md -> md.equals(SHOW_TIME)));
         Stream<Unit> minAddTicks = addTicks
-                .gate(mode.map(md -> md.equals(SET_MIN)));
+                .gate(mode.map(md -> md.equals(SET_MIN) || md.equals(SET_MIN_SEC)));
         Cell<Integer> minCounter = minTimeTicks
                 .orElse(minAddTicks)
                 .accum(0, (tick, min) -> (min + 1) % MIN_MAX);
@@ -45,7 +45,7 @@ public class Clock {
         Cell<String> blinkingMin = ticTac
                 .lift(minString, empty, (bool, firm, hidden) -> bool ? firm : hidden);
         min = mode.lift(blinkingMin, minString, (md, blinking, firm) ->
-                md.equals(SET_MIN) ? blinking : firm);
+                md.equals(SET_MIN) || md.equals(SET_MIN_SEC) ? blinking : firm);
 
         Stream<Unit> hourTimeTicks = minTimeTicks
                 .gate(minCounter.map(min -> min == MIN_MAX - 1))
