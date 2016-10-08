@@ -6,6 +6,7 @@ public class Clock {
 
     private static final int SEC_MAX = 60;
     private static final int MIN_MAX = 60;
+    private static final int HOUR_MAX = 24;
 
     public final Cell<String> hour;
     public final Cell<String> min;
@@ -33,7 +34,12 @@ public class Clock {
         Cell<String> minString = minCounter.map(min -> String.format("%02d", min));
         min = minString;
 
-        hour = empty;
+        Stream<Unit> hourTimeTicks = minTimeTicks
+                .gate(minCounter.map(min -> min == MIN_MAX - 1));
+        Cell<Integer> hourCounter = hourTimeTicks
+                .accum(0, (tick, hour) -> (hour + 1) % HOUR_MAX);
+        Cell<String> hourString = hourCounter.map(hour -> String.format("%02d", hour));
+        hour = hourString;
 
     }
 }
