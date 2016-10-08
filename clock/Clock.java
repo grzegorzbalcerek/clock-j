@@ -32,8 +32,15 @@ public class Clock {
                 (md, blinking, firm) -> md.equals(SHOW_TIME) ? blinking : firm);
 
         Stream<Unit> secTimeTicks = timeTicks.gate(ticTac);
-        Cell<Integer> secCounter = secTimeTicks
-                .accum(0, (tick, sec) -> (sec + 1) % SEC_MAX);
+        Stream<Lambda1<Integer,Integer>> secAdvance = secTimeTicks
+                .filter(tick -> !mode.sample().equals(SET_MIN_SEC))
+                .map(tick -> sec -> (sec + 1) % SEC_MAX);
+        Stream<Lambda1<Integer,Integer>> secReset = addTicks
+                .filter(tick -> mode.sample().equals(SET_MIN_SEC))
+                .map(tick -> sec -> 0);
+        Cell<Integer> secCounter = secAdvance
+                .orElse(secReset)
+                .accum(0, (f, sec) -> f.apply(sec));
         Cell<String> secString = secCounter.map(sec -> String.format("%02d", sec));
         sec = secString;
 
