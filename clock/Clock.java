@@ -2,6 +2,8 @@ package clock;
 
 import nz.sodium.*;
 
+import static clock.Mode.SHOW_TIME;
+
 public class Clock {
 
     private static final int SEC_MAX = 60;
@@ -17,9 +19,13 @@ public class Clock {
 
         Cell<String> empty = new Cell<>("");
 
+        Cell<Mode> mode = switchTicks.accum(SHOW_TIME, (tick, md) -> md.next());
+
         Cell<Boolean> ticTac = timeTicks.accum(true, (tick, bool) -> !bool);
         Cell<String> blinkingColon = ticTac.map(bool -> bool ? "" : ":");
-        separator = blinkingColon;
+        Cell<String> firmColon = new Cell<>(":");
+        separator = mode.lift(blinkingColon, firmColon,
+                (md, blinking, firm) -> md.equals(SHOW_TIME) ? blinking : firm);
 
         Stream<Unit> secTimeTicks = timeTicks.gate(ticTac);
         Cell<Integer> secCounter = secTimeTicks
