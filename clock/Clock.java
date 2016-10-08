@@ -2,8 +2,7 @@ package clock;
 
 import nz.sodium.*;
 
-import static clock.Mode.SET_HOUR;
-import static clock.Mode.SHOW_TIME;
+import static clock.Mode.*;
 
 public class Clock {
 
@@ -35,11 +34,18 @@ public class Clock {
         sec = secString;
 
         Stream<Unit> minTimeTicks = secTimeTicks
-                .gate(secCounter.map(sec -> sec == SEC_MAX - 1));
+                .gate(secCounter.map(sec -> sec == SEC_MAX - 1))
+                .gate(mode.map(md -> md.equals(SHOW_TIME)));
+        Stream<Unit> minAddTicks = addTicks
+                .gate(mode.map(md -> md.equals(SET_MIN)));
         Cell<Integer> minCounter = minTimeTicks
+                .orElse(minAddTicks)
                 .accum(0, (tick, min) -> (min + 1) % MIN_MAX);
         Cell<String> minString = minCounter.map(min -> String.format("%02d", min));
-        min = minString;
+        Cell<String> blinkingMin = ticTac
+                .lift(minString, empty, (bool, firm, hidden) -> bool ? firm : hidden);
+        min = mode.lift(blinkingMin, minString, (md, blinking, firm) ->
+                md.equals(SET_MIN) ? blinking : firm);
 
         Stream<Unit> hourTimeTicks = minTimeTicks
                 .gate(minCounter.map(min -> min == MIN_MAX - 1))
