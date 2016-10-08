@@ -3,6 +3,7 @@ package clock;
 import javafx.application.Application;
 import javafx.stage.Stage;
 import nz.sodium.StreamSink;
+import nz.sodium.Transaction;
 import nz.sodium.Unit;
 
 import static clock.Time.timeTicks;
@@ -18,7 +19,8 @@ public class App extends Application {
 
         StreamSink<Unit> switchTicks = new StreamSink<>();
         StreamSink<Unit> addTicks = new StreamSink<>();
-        Clock clock = new Clock(timeTicks(), switchTicks, addTicks);
+        Clock clock = Transaction.run(() ->
+                new Clock(timeTicks(), switchTicks, addTicks));
         Display display = new Display(
                 () -> switchTicks.send(Unit.UNIT),
                 () -> addTicks.send(Unit.UNIT));

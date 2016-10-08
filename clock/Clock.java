@@ -19,7 +19,11 @@ public class Clock {
 
         Cell<String> empty = new Cell<>("");
 
-        Cell<Mode> mode = switchTicks.accum(SHOW_TIME, (tick, md) -> md.next());
+        StreamLoop<Unit> minAddTicks = new StreamLoop<>();
+        Cell<Mode> mode = switchTicks
+                .map(tick -> true)
+                .orElse(minAddTicks.map(tick -> false))
+                .accum(SHOW_TIME, (bool, md) -> bool ? md.next() : SET_MIN_SEC);
 
         Cell<Boolean> ticTac = timeTicks.accum(true, (tick, bool) -> !bool);
         Cell<String> blinkingColon = ticTac.map(bool -> bool ? "" : ":");
@@ -36,8 +40,8 @@ public class Clock {
         Stream<Unit> minTimeTicks = secTimeTicks
                 .gate(secCounter.map(sec -> sec == SEC_MAX - 1))
                 .gate(mode.map(md -> md.equals(SHOW_TIME)));
-        Stream<Unit> minAddTicks = addTicks
-                .gate(mode.map(md -> md.equals(SET_MIN) || md.equals(SET_MIN_SEC)));
+        minAddTicks.loop(addTicks
+                .gate(mode.map(md -> md.equals(SET_MIN) || md.equals(SET_MIN_SEC))));
         Cell<Integer> minCounter = minTimeTicks
                 .orElse(minAddTicks)
                 .accum(0, (tick, min) -> (min + 1) % MIN_MAX);
