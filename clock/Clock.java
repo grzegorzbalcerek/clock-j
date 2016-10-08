@@ -13,7 +13,9 @@ public class Clock {
 
         Cell<String> empty = new Cell<>("");
 
-        separator = empty;
+        Cell<Boolean> ticTac = timeTicks.accum(true, (tick, bool) -> !bool);
+        Cell<String> blinkingColon = ticTac.map(bool -> bool ? "" : ":");
+        separator = blinkingColon;
 
         sec = empty;
 
